@@ -4,7 +4,6 @@ import os
 import argparse
 import sys
 import subprocess
-from datetime import datetime
 from slurmmanager import SlurmManager
 
 
@@ -23,14 +22,14 @@ if __name__ == '__main__':
     # setup parser
     parser = argparse.ArgumentParser(
         description='Submit a job through a python wrapper to manage jobs.')
-    parser.add_argument('-c', '--cpus-per-task',
-                        help='CPUs per task', type=int)
+    # parser.add_argument('-c', '--cpus-per-task',
+    #                     help='CPUs per task', type=int)
     parser.add_argument('-J', '--job-name',
                         help="Specify a name for the job allocation.", type=str)
     parser.add_argument('-p', '--partition',
                         help="Request specific partition for job execution.", type=str)
-    parser.add_argument('-t', '--time',
-                        help="Request specific partition for job execution.", type=str)
+    # parser.add_argument('-t', '--time',
+    #                     help="Request specific partition for job execution.", type=str)
     parser.add_argument('-o', '--output', help='log file location', type=str)
 
     # get working directory for

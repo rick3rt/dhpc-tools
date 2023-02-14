@@ -3,18 +3,22 @@
 import os
 import subprocess
 import pandas as pd
+from math import isnan
 from datetime import datetime
 
 
 def convert_slurm_time(time_str: str):
-    dt = datetime.strptime(time_str, '%Y-%m-%dT%H:%M:%S')
-    return dt.strftime('%m-%d %H:%M')
+    try:
+        dt = datetime.strptime(time_str, '%Y-%m-%dT%H:%M:%S')
+        return dt.strftime('%m-%d %H:%M')
+    except ValueError:
+        return ''
 
 
 class SlurmManager:
 
     def __init__(self):
-        self.database_folder = 'data'
+        self.database_folder = os.path.expanduser('~/.myslurm')
         self.database_file = 'jobs.csv'
         self.database_path = os.path.join(
             self.database_folder, self.database_file)
@@ -27,7 +31,6 @@ class SlurmManager:
 
     def create_database(self):
         # , "State", "SubmitTime", "StartTime", "TimeLeft", "TimeLimit", "Nodes", "WorkDir"]
-
         if not os.path.exists(self.database_folder):
             os.mkdir(self.database_folder)
         self.database = pd.DataFrame(columns=self.columns)
@@ -48,7 +51,7 @@ class SlurmManager:
 
     def update_database(self, entry: dict):
         df = self.database
-        jobid = entry['JobID']  # search for jobID
+        jobid = int(entry['JobID'])  # search for jobID
         idx = df.index[df['JobID'] == jobid]  # get index
         if idx.empty:
             # can append entry as new row cause job is unknown
@@ -89,7 +92,6 @@ class SlurmManager:
         out, err = p.communicate()
         if err:
             print("ERR: ", err)
-
         out = out.decode(encoding='utf-8')
         entries = [e.split('|') for e in out.splitlines()]
         for e in entries:
@@ -101,7 +103,13 @@ class SlurmManager:
     def get_outfile(self, index):
         cwd = self.database["WorkDir"].loc[index]
         outfile = self.database["Output"].loc[index]
-        return os.path.join(cwd, outfile)
+        if not isnan(cwd) and not isnan(outfile):
+            return os.path.join(cwd, outfile)
+        else:
+            return ''
+
+    def get_jobid(self, index):
+        return int(self.database["JobID"].loc[index])
 
     def print_database(self, n=None):
         if n:
@@ -112,6 +120,9 @@ class SlurmManager:
     def prettyprint_database(self, n=None):
         cols = ['JobID', 'JobName', 'State', 'Elapsed', 'Start']
         df = self.database
+        if df.empty:
+            print('Database empty...')
+            return
         df = df[cols].loc[0:n-1]
         print(df.to_markdown())
 

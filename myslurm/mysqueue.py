@@ -2,9 +2,6 @@
 
 import os
 import argparse
-import sys
-import subprocess
-from datetime import datetime
 from slurmmanager import SlurmManager
 
 
@@ -24,6 +21,8 @@ if __name__ == '__main__':
                         help='Tail log file for selected job (default is cat)', action="store_true")
     parser.add_argument('-n', '--numjobs',
                         help='Number of jobs to display', type=int, default=10)
+    parser.add_argument('-c', '--cancel',
+                        help='Cancel the selected job', action="store_true")
 
     args = parser.parse_args()
     SM = SlurmManager()
@@ -33,6 +32,7 @@ if __name__ == '__main__':
     # select a job
     if args.list:
         SM.prettyprint_database(args.numjobs)
+
     elif args.output:
         if args.jobindex is None:
             print('Specify which job to show the output for using -j/-J:')
@@ -44,3 +44,14 @@ if __name__ == '__main__':
             os.system(f'cat {outfile}')
         else:
             print(f"Could not find output file\n\t{outfile}")
+
+    elif args.cancel:
+        if args.jobindex:
+            jobid = SM.get_jobid(args.jobindex)
+        else:
+            jobid = args.jobid
+        print(f'Cancelling {jobid}')
+        os.system(f'scancel {jobid}')
+
+    else:
+        SM.prettyprint_database(args.numjobs)
