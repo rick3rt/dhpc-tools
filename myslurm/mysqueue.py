@@ -39,14 +39,17 @@ if __name__ == '__main__':
             parser.print_help()
         SM.prettyprint_entry(args.jobindex)
         outfile = SM.get_outfile(args.jobindex)
-        # cat outfile
+        # cat/tail outfile
+        cmd = "cat"
+        if args.tail:
+            cmd = "tail"
         if os.path.isfile(outfile):
-            os.system(f'cat {outfile}')
+            os.system(f'{cmd} {outfile}')
         else:
             print(f"Could not find output file\n\t{outfile}")
 
     elif args.cancel:
-        if args.jobindex:
+        if args.jobindex is not None:
             jobid = SM.get_jobid(args.jobindex)
         else:
             jobid = args.jobid

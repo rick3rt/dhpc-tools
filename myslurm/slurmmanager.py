@@ -3,7 +3,6 @@
 import os
 import subprocess
 import pandas as pd
-from math import isnan
 from datetime import datetime
 
 
@@ -103,7 +102,7 @@ class SlurmManager:
     def get_outfile(self, index):
         cwd = self.database["WorkDir"].loc[index]
         outfile = self.database["Output"].loc[index]
-        if not isnan(cwd) and not isnan(outfile):
+        if isinstance(cwd, str) and isinstance(outfile, str):
             return os.path.join(cwd, outfile)
         else:
             return ''
@@ -113,7 +112,7 @@ class SlurmManager:
 
     def print_database(self, n=None):
         if n:
-            print(self.database.loc[0:n-1].to_markdown())
+            print(self.database.loc[0:n - 1].to_markdown())
         else:
             print(self.database.to_markdown())
 
@@ -123,7 +122,7 @@ class SlurmManager:
         if df.empty:
             print('Database empty...')
             return
-        df = df[cols].loc[0:n-1]
+        df = df[cols].loc[0:n - 1]
         print(df.to_markdown())
 
     def prettyprint_entry(self, idx):
