@@ -11,6 +11,8 @@ def submit_job(sbatch_args_list: list):
     sbatch_args_list.insert(0, 'sbatch')  # add sbatch command
     p = subprocess.Popen(sbatch_args_list, stdout=subprocess.PIPE)
     out, err = p.communicate()
+    # err = None
+    # out = b"Submitted batch job 2014803"
     if err:
         print("ERR: ", err)
     # get jobid from out:
@@ -52,13 +54,16 @@ if __name__ == '__main__':
 
     # submit job
     jobid = submit_job(original_args)
+    job_name = args.job_name
+    job_name = job_name.replace("'", "")
+    job_name = job_name.replace('"', '')
 
     # format outputfile
     output_file = args.output
-    output_file = output_file.replace('%x', args.job_name)
+    output_file = output_file.replace('%x', job_name)
     output_file = output_file.replace('%j', str(jobid))
 
     # and update SlurmManager database
     SM = SlurmManager()
-    SM.register_job(jobid=jobid, jobname=args.job_name, workdir=cwd,
+    SM.register_job(jobid=jobid, jobname=job_name, workdir=cwd,
                     partition=args.partition, output=output_file)
