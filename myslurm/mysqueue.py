@@ -19,6 +19,8 @@ if __name__ == '__main__':
                         help='Show log file for selected job', action="store_true")
     parser.add_argument('-t', '--tail',
                         help='Tail log file for selected job (default is cat)', action="store_true")
+    parser.add_argument('-T', '--tailf',
+                        help='Tail log file for selected job with -f option (default is cat)', action="store_true")
     parser.add_argument('-n', '--numjobs',
                         help='Number of jobs to display', type=int, default=10)
     parser.add_argument('-c', '--cancel',
@@ -43,6 +45,8 @@ if __name__ == '__main__':
         cmd = "cat"
         if args.tail:
             cmd = "tail"
+        if args.tailf:
+            cmd = "tail -f"
         if os.path.isfile(outfile):
             os.system(f'{cmd} {outfile}')
         else:
