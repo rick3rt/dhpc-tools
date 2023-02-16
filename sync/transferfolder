@@ -123,7 +123,7 @@ if [ ${#args[@]} -eq 2 ]; then
 fi
 
 # now make full path for dst
-dst_path=$remote_base_path/$dst_path/$src_folder_name
+# dst_path=$remote_base_path/$dst_path/$src_folder_name 
 
 # check if src paths exists
 if [ ! -d $src_path ]; then
@@ -133,7 +133,7 @@ fi
 # ------------------------------------------------------------------------------
 # construct rsync command
 # ------------------------------------------------------------------------------
-rsync_cmd="rsync -av --no-perms ${src_path}/ ${dst_path}" # note extra / to copy dirs contents to target dir
+rsync_cmd="rsync -av --no-perms ${src_path}/ ${dst_path} --info=progress2 --no-inc-recursive" # note extra / to copy dirs contents to target dir
 
 print_transfer() {
     msg "Summary"
