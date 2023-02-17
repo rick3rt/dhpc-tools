@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+BASE_LOCAL=/scratch/rwaasdorp1
+BASE_REMOTE=/tudelft.net/staff-bulk/tnw/IST/AK/hpc/rwaasdorp1
+
+#/home/rwaasdorp1/tudbulk/experimental_data/probe_calibration/probe_calibration_Feb2023/Air_TW_calib_hadamard
+#/home/rwaasdorp1/scratch/processed_data/probe_calibration/probe_calibration_Feb2023
+P=$(realpath $1) # resolve path if symbolic link
+
+# convert local to remote or vice versa
+case $P in
+*"$BASE_LOCAL"*)
+    NEW_P=${P#"$BASE_LOCAL"}
+    NEW_P="$BASE_REMOTE/$NEW_P"
+    ;;
+*"$BASE_REMOTE"*)
+    NEW_P=${P#"$BASE_REMOTE"}
+    NEW_P="$BASE_LOCAL/$NEW_P"
+    ;;
+esac
+
+echo $NEW_P

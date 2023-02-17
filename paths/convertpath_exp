@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+BASE_EXPERIMENT=experimental_data
+BASE_PROCESSED=processed_data
+
+P=$(realpath $1) # resolve path if symbolic link
+
+# convert local to remote or vice versa
+case $P in
+*"$BASE_EXPERIMENT"*)
+    NEW_P="${P/"$BASE_EXPERIMENT"/"$BASE_PROCESSED"}"
+    ;;
+*"$BASE_PROCESSED"*)
+    NEW_P="${P/"$BASE_PROCESSED"/"$BASE_EXPERIMENT"}"
+    ;;
+esac
+echo $NEW_P
