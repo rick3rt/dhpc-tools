@@ -107,8 +107,14 @@ class SlurmManager:
         else:
             return ''
 
+    def get_jobindex(self, jobid):
+        return self.database.index[self.database['JobID'] == jobid][0]  # get index
+
     def get_jobid(self, index):
         return int(self.database["JobID"].loc[index])
+
+    def get_outfile_id(self, jobid):
+        return self.get_outfile(self.get_jobindex(jobid))
 
     def print_database(self, n=None):
         if n:

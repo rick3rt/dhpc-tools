@@ -36,11 +36,18 @@ if __name__ == '__main__':
         SM.prettyprint_database(args.numjobs)
 
     elif args.output:
-        if args.jobindex is None:
+        if args.jobindex is None and args.jobid is None:
             print('Specify which job to show the output for using -j/-J:')
             parser.print_help()
-        SM.prettyprint_entry(args.jobindex)
-        outfile = SM.get_outfile(args.jobindex)
+            exit(0)
+
+        if args.jobindex is not None:
+            jobindex = args.jobindex
+        else:
+            jobindex = SM.get_jobindex(args.jobid)
+        SM.prettyprint_entry(jobindex)
+        outfile = SM.get_outfile(jobindex)
+        
         # cat/tail outfile
         cmd = "cat"
         if args.tail:
