@@ -19,8 +19,7 @@ class Database:
             for line in lines:
                 row = line.split(',')
                 for idx, c_type in enumerate(self.column_types):
-                    row[idx] = c_type(row[idx])
-                print(row)
+                    row[idx] = c_type(row[idx].strip())
                 self.data.append(row)
 
     def save_to_csv(self, filename):
@@ -28,7 +27,8 @@ class Database:
             f.write(','.join(self.cols))
             f.write('\n')
             for row in self.data:
-                f.write(','.join(row))
+                f.write(','.join([str(r) for r in row]))
+                f.write('\n')
 
     def lookup_key(self, key):
         if key in self.cols:
@@ -58,22 +58,24 @@ class Database:
     def print_all(self):
         print(tabulate(self.data, headers=self.cols))
 
-    def print_selection(self, keys):
+    def print_selection(self, keys, row_idx=None):
         col_idx = [self.lookup_key(key) for key in keys]
         data = []
-        for row in self.data:
-            data.append(row[i] for i in col_idx)
+        for idx, row in enumerate(self.data):
+            if row_idx is None:
+                data.append([row[i] for i in col_idx])
+            else:
+                if idx in row_idx:
+                    data.append([row[i] for i in col_idx])
         header = [self.cols[i] for i in col_idx]
         print(tabulate(data, headers=header))
 
     def sort_rows(self, key):
         col = self.get_col(key)
-        print(col)
         sort_index = [i[0] for i in sorted(enumerate(col), key=lambda x:x[1], reverse=True)]
         self.data = [self.data[i] for i in sort_index]
         # and re index?
         icol = self.lookup_key('index')
-        print(icol)
         if icol is not None:
             for ind, row in enumerate(self.data):
                 row[icol] = ind
@@ -113,15 +115,9 @@ class SlurmManager:
 
         self.columns = ["index", "JobID", "JobName", "WorkDir", "Partition",
                         "Output", "State", "Elapsed", "Start", "End"]
-        self.column_types = [int, str, str, str, str, str, str, str, str]
+        self.column_types = [int, int, str, str, str, str, str, str, str, str]
         self.database = Database(self.columns, self.column_types)
         self.load_database()
-
-    def create_database(self):
-        # , "State", "SubmitTime", "StartTime", "TimeLeft", "TimeLimit", "Nodes", "WorkDir"]
-        if not os.path.exists(self.database_folder):
-            os.mkdir(self.database_folder)
-        self.database = pd.DataFrame(columns=self.columns)
 
     def load_database(self):
         if not os.path.isfile(self.database_path):
@@ -137,7 +133,7 @@ class SlurmManager:
     def update_database(self, entry: dict):
         jobid = int(entry['JobID'])  # search for jobID
         self.database.add_row(entry, "JobID")
-        self.database.sort_rows()
+        self.database.sort_rows("JobID")
 
     def register_job(self, jobid: int, jobname: str, workdir: str, partition: str, output: str):
         entry = {
@@ -190,44 +186,16 @@ class SlurmManager:
     def get_outfile_id(self, jobid):
         return self.get_outfile(self.get_jobindex(jobid))
 
-    def print_database(self, n=None):
-        if n:
-            print(self.database.loc[0:n - 1].to_markdown())
-        else:
-            print(self.database.to_markdown())
-
-    def prettyprint_database(self, n=None):
-        cols = ['JobID', 'JobName', 'State', 'Elapsed', 'Start']
-        self.database.print_selection(cols)
+    def prettyprint_database(self, n):
+        cols = ['index', 'JobID', 'JobName', 'State', 'Elapsed', 'Start']
+        self.database.print_selection(cols, range(n))
 
     def prettyprint_entry(self, idx):
-        cols = ['JobID', 'JobName', 'State', 'Elapsed', 'Start']
-        self.database.print_selection(cols)
+        cols = ['index', 'JobID', 'JobName', 'State', 'Elapsed', 'Start']
+        self.database.print_selection(cols, [idx])
 
 
 if __name__ == "__main__":
-    # fields_to_get = ["JobID", "JobName", "Partition",
-    #                  "State", "Elapsed", "Start", "End"]
-    # fields_str = ",".join(fields_to_get)
-    # args = ['sacct', '-u', os.getlogin(),
-    #         f'--format={fields_str}', '-n', '-X', '-P']
-
-    # p = subprocess.Popen(args, stdout=subprocess.PIPE)
-    # out, err = p.communicate()
-    # if err:
-    #     print("ERR: ", err)
-
-    # out = out.decode(encoding='utf-8')
-    # entries = [e.split('|') for e in out.splitlines()]
-    # for e in entries:
-    #     d = dict(zip(fields_to_get, e))
-    #     d['Start'] = convert_slurm_time(d['Start'])
-    #     d['End'] = convert_slurm_time(d['End'])
-
-    # exit(0)
-    # for entry in entries:
-    #     entry = entry.split('|')
-    #     print(entry)
 
     cols = ["index", "JobID", "JobName", "WorkDir", "Partition",
             "Output", "State", "Elapsed", "Start", "End"]
