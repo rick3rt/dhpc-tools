@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import pandas as pd
 from datetime import datetime
 from tabulate import tabulate
 
@@ -115,7 +114,7 @@ class SlurmManager:
         self.columns = ["index", "JobID", "JobName", "WorkDir", "Partition",
                         "Output", "State", "Elapsed", "Start", "End"]
         self.column_types = [int, str, str, str, str, str, str, str, str]
-        self.database = None
+        self.database = Database(self.columns, self.column_types)
         self.load_database()
 
     def create_database(self):
@@ -126,34 +125,19 @@ class SlurmManager:
 
     def load_database(self):
         if not os.path.isfile(self.database_path):
-            print("No Database found, creating empty one. ")
-            self.create_database()
             self.save_database()
         else:
-            # print("Load Database")
-            dtypes = dict(zip(self.columns, self.column_types))
-            self.database = pd.read_csv(
-                self.database_path, index_col=0, dtype=dtypes)
+            self.database.load_from_csv(self.database_path)
 
     def save_database(self):
-        self.database.to_csv(self.database_path)
+        if not os.path.exists(self.database_folder):
+            os.mkdir(self.database_folder)
+        self.database.save_to_csv(self.database_path)
 
     def update_database(self, entry: dict):
-        df = self.database
         jobid = int(entry['JobID'])  # search for jobID
-        idx = df.index[df['JobID'] == jobid]  # get index
-        if idx.empty:
-            # can append entry as new row cause job is unknown
-            df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
-        else:
-            # job is known, update data with data from entry
-            for key, value in entry.items():
-                df.loc[idx, [key]] = value
-
-        # sort dataframe based on jobid
-        df = df.astype({'JobID': 'int'})
-        self.database = df.sort_values(
-            by=['JobID'], ascending=False, ignore_index=True)
+        self.database.add_row(entry, "JobID")
+        self.database.sort_rows()
 
     def register_job(self, jobid: int, jobname: str, workdir: str, partition: str, output: str):
         entry = {
@@ -190,18 +174,18 @@ class SlurmManager:
             self.update_database(d)
 
     def get_outfile(self, index):
-        cwd = self.database["WorkDir"].loc[index]
-        outfile = self.database["Output"].loc[index]
+        cwd = self.database.get_item("WorkDir", index)
+        outfile = self.database.get_item("Output", index)
         if isinstance(cwd, str) and isinstance(outfile, str):
             return os.path.join(cwd, outfile)
         else:
             return ''
 
     def get_jobindex(self, jobid):
-        return self.database.index[self.database['JobID'] == jobid][0]  # get index
+        return self.database.lookup_row("JobID", jobid)
 
     def get_jobid(self, index):
-        return int(self.database["JobID"].loc[index])
+        return self.database.get_item("JobID", index)
 
     def get_outfile_id(self, jobid):
         return self.get_outfile(self.get_jobindex(jobid))
@@ -214,18 +198,11 @@ class SlurmManager:
 
     def prettyprint_database(self, n=None):
         cols = ['JobID', 'JobName', 'State', 'Elapsed', 'Start']
-        df = self.database
-        if df.empty:
-            print('Database empty...')
-            return
-        df = df[cols].loc[0:n - 1]
-        print(df.to_markdown())
+        self.database.print_selection(cols)
 
     def prettyprint_entry(self, idx):
         cols = ['JobID', 'JobName', 'State', 'Elapsed', 'Start']
-        df = self.database[cols].loc[idx]
-        print(df.to_markdown())  # TODO: rotate dataframe
-        # print(df.transpose())
+        self.database.print_selection(cols)
 
 
 if __name__ == "__main__":
